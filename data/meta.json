@@ -1,27 +1,27 @@
 {
  "title": "PLL Census",
  "source": "IEEE Xplore API (records collected by adc-census)",
- "updated": "2026-10-23",
+ "updated": "2026-10-24",
  "coverage_from": "1997-01",
  "coverage_to": "2026-10",
- "total": 1382,
- "core": 847,
+ "total": 2241,
+ "core": 1392,
  "by_venue": {
-  "TVLSI": 16,
-  "TCAS-I": 151,
+  "TVLSI": 71,
+  "TCAS-I": 236,
   "JSSC": 488,
-  "TCAS-II": 30,
+  "TCAS-II": 231,
   "VLSI": 22,
   "CICC": 37,
-  "ISSCC": 50,
-  "SSC-L": 17,
+  "ISSCC": 237,
+  "SSC-L": 34,
   "A-SSCC": 16,
   "ESSCIRC": 20
  },
  "by_type": {
-  "Unspecified": 473,
-  "Fractional-N": 343,
-  "Integer-N": 31
+  "Unspecified": 863,
+  "Fractional-N": 481,
+  "Integer-N": 48
  },
- "last_run_new": 0
+ "last_run_new": 859
 }
