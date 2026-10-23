@@ -14,6 +14,7 @@
     "Charge-pump", "Ring oscillator", "LC oscillator"];
   var TYPE_COLORS = { "Integer-N": "#1f55c4", "Fractional-N": "#d0365a" };
   var VENUE_ORDER = ["ISSCC", "VLSI", "JSSC", "CICC", "ESSCIRC", "A-SSCC", "SSC-L", "TCAS-I", "TCAS-II", "TVLSI"];
+  var KNOWN_APPS = ["Wireline/clocking", "Wireless LO", "Radar/FMCW", "IoT/low-power", "Processor/SoC", "Quantum/cryo"];
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var PAGE = 150;
 
@@ -80,6 +81,23 @@
     return m ? MONTHS[+m[2] - 1] + " " + m[1] : d;
   }
   function list(s) { return s ? s.split(/\s*;\s*/).filter(Boolean) : []; }
+  // canonical tag names; annotations may use these spellings in any case
+  var TAG_ALIASES = {
+    "adpll": "Digital/ADPLL", "dpll": "Digital/ADPLL", "digital": "Digital/ADPLL", "alldigital": "Digital/ADPLL",
+    "sspll": "Sampling", "spll": "Sampling", "subsampling": "Sampling", "sampling": "Sampling",
+    "cp": "Charge-pump", "cppll": "Charge-pump", "chargepump": "Charge-pump", "typei": "Type-I", "type1": "Type-I",
+    "il": "Injection-locked", "ilpll": "Injection-locked", "injection": "Injection-locked", "injectionlocked": "Injection-locked",
+    "dtc": "DTC-based", "dualloop": "Cascaded", "ring": "Ring oscillator", "ro": "Ring oscillator", "lc": "LC oscillator",
+    "wireline": "Wireline/clocking", "clocking": "Wireline/clocking", "lo": "Wireless LO", "wireless": "Wireless LO",
+    "radar": "Radar/FMCW", "fmcw": "Radar/FMCW", "iot": "IoT/low-power", "lowpower": "IoT/low-power", "soc": "Processor/SoC",
+    "processor": "Processor/SoC", "quantum": "Quantum/cryo", "cryo": "Quantum/cryo"
+  };
+  function tagKey(s) { return s.toLowerCase().replace(/[\s_\-\/.]+/g, ""); }
+  function canonTags(s, known) {
+    var byKey = {};
+    known.forEach(function (k) { byKey[tagKey(k)] = k; });
+    return list(s).map(function (t) { var k = tagKey(t); return byKey[k] || TAG_ALIASES[k] || t; });
+  }
 
   /* ------------------------------------------------------------ data model */
   function primaryArch(p) {
@@ -104,8 +122,9 @@
       if (a) {
         if (/^(1|y|yes|true|x)$/i.test(a.exclude || "")) return;
         if (a.type) p.ty = /frac/i.test(a.type) ? "Fractional-N" : /int/i.test(a.type) ? "Integer-N" : "";
-        if (a.arch) p.ar = list(a.arch);
-        if (a.app) p.ap = list(a.app);
+        if (a.arch) p.ar = canonTags(a.arch, Object.keys(ARCH_COLORS));
+        if (a.app) p.ap = canonTags(a.app, KNOWN_APPS);
+        if (a.cal) p.cal = /^(1|y|yes|true|x|o)$/i.test(a.cal);
         if (a.type || a.arch) p.lv = "core";
         ANN_KEYS.forEach(function (k) {
           var v = parseSI(a[k]);
@@ -135,7 +154,7 @@
     if (F.cal && !p.cal) return false;
     if (F.fresh && p.first !== META.updated) return false;
     if (F.q) {
-      var hay = p._hay || (p._hay = [p.t, (p.au || []).join(" "), (p.org || []).join(" "), p.v, p.vt, p.ar.join(" ")].join(" ").toLowerCase());
+      var hay = p._hay || (p._hay = [p.t, (p.au || []).join(" "), (p.org || []).join(" "), p.v, p.vt, p.ar.join(" "), p.ap.join(" "), p.note || ""].join(" ").toLowerCase());
       var terms = F.q.toLowerCase().split(/\s+/).filter(Boolean);
       for (var i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return false;
     }
@@ -494,6 +513,7 @@
       '<div class="paper" role="cell"><a class="title" href="' + esc(p.url || (p.doi ? "https://doi.org/" + p.doi : "#")) +
       '" target="_blank" rel="noopener">' + esc(p.t) + "</a>" +
       (names ? '<p class="by">' + esc(names) + "</p>" : "") +
+      (p.note ? '<p class="by note">' + esc(p.note) + "</p>" : "") +
       ((p.org || []).length ? '<p class="by org">' + esc(p.org.slice(0, 2).join("; ")) + "</p>" : "") +
       (tags.length ? '<div class="tags">' + tags.join("") + "</div>" : "") + "</div>" +
       spec(p, "f", fmtSI(p.s.f, "Hz"), "f_out") +

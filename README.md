@@ -45,7 +45,8 @@ GitHub 웹에서 `data/annotations.csv`를 열어 연필 아이콘으로 편집�
 | `node`, `area` | nm, mm² |
 | `fom` | dB (음수, 예: `-250.1`) |
 | `spur`, `fspur`, `pn` | dBc, dBc, dBc/Hz (음수) |
-| `note`, `by` | 메모, 검수자 |
+| `cal` | `1`이면 보정 기법 사용, `0`이면 미사용 (비우면 자동 판정) |
+| `note`, `by` | 메모, 검수자. 메모는 목록에 표시되고 검색창에서도 찾을 수 있습니다 |
 
 ## 랩 서버 설정 (1회)
 
@@ -68,6 +69,12 @@ mkdir -p logs
 ```
 
 GitHub Pages: 저장소 **Settings → Pages**에서 Source를 **Deploy from a branch**, Branch를 **main / (root)**로 지정합니다.
+
+### 태그 입력 요령
+
+- `arch`, `app`을 채우면 자동 태그를 **대체**합니다. 자동 태그 중 맞는 것도 함께 적으세요.
+- 대소문자·하이픈·공백은 구분하지 않고, 자주 쓰는 약칭도 인식합니다: `adpll`→Digital/ADPLL, `sspll`→Sampling, `cp`→Charge-pump, `il`→Injection-locked, `dtc`→DTC-based, `fmcw`→Radar/FMCW.
+- `cal` 열이 헤더에 없으면 헤더 줄 끝에 `,cal`을 붙이고 쓰면 됩니다(열 순서는 상관없음).
 
 ## 참고
 
