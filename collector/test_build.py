@@ -113,10 +113,13 @@ class TestBuild(unittest.TestCase):
         self.put(2, "A 12-b SAR ADC", "IEEE Journal of Solid-State Circuits")
         self.put(3, "A 10-GHz PLL", "2025 IEEE Custom Integrated Circuits Conference (CICC)")
         self.put(4, "A 2-GHz PLL", "Some Other Conference")
+        self.put(7, "A 28-GHz Phased-Array Transceiver With a 30-fs Jitter LO-PLL", "IEEE Journal of Solid-State Circuits",
+                 "It consumes 500 mW.")
         self.put(5, "An Old PLL", "IEEE Journal of Solid-State Circuits", year=1990)
         meta = build.rebuild(config, self.cache, "2026-10-23")
         papers = {p["id"]: p for p in build.load_json(build.PAPERS, [])}
-        self.assertEqual(set(papers), {"1", "3"})
+        self.assertEqual(set(papers), {"1", "3", "7"})
+        self.assertEqual((papers["7"]["lv"], papers["7"]["s"], papers["7"]["sys"]), ("related", {}, True))
         p = papers["1"]
         self.assertEqual((p["v"], p["ty"], p["cn"], p["x"]["fom_calc"]), ("JSSC", "Fractional-N", ["South Korea"], -253.3))
         self.assertNotIn("abstract", json.dumps(list(papers.values())))

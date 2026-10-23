@@ -70,6 +70,12 @@ mkdir -p logs
 
 GitHub Pages: 저장소 **Settings → Pages**에서 Source를 **Deploy from a branch**, Branch를 **main / (root)**로 지정합니다.
 
+### 수치 수정 요청
+
+- 사이트의 각 논문 아래 **Report a fix**를 누르면 GitHub 이슈 작성 화면이 열립니다. 논문 id, 현재 값과 출처, annotations.csv 행 형식이 미리 채워져 있으니 고칠 항목·값·근거(표·그림·쪽)만 적으면 됩니다(GitHub 계정 필요).
+- 연구실은 이슈를 확인해 `data/annotations.csv`에 행을 추가하고 이슈를 닫습니다. 저장소 쓰기 권한이 있으면 annotations.csv를 직접 고쳐도 됩니다.
+- PLL이 송수신기 등의 블록이거나 초록에서만 언급된 논문(related)은 논문의 수치가 PLL 값이 아니므로 자동·AI 수치를 표시하지 않고 "—"로 둡니다. 사람이 검수한 값은 표시합니다.
+
 ### 값의 출처와 삭제
 
 - 사이트는 값마다 출처를 표시합니다: `T` 제목, `A` 초록(둘 다 정규식 자동 추출, 회색), `AI` AI 도구 추출(보라색 기울임, 미검수), `✓` 연구실 검수(진한 색).

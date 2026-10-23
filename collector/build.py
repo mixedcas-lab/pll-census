@@ -107,6 +107,8 @@ def build_record(a, venues):
     if not level:
         return None
     specs, src = C.spec_sources(title, abstract)
+    if level != "core":     # PLL as a block of a radio/link, or only in the abstract: the numbers are not the PLL's
+        specs, src = {}, {}
     authors = sorted((a.get("authors") or {}).get("authors") or [], key=lambda x: x.get("author_order") or 0)
     names, orgs, countries = [], [], []
     for au in authors:
@@ -147,6 +149,7 @@ def build_record(a, venues):
         "cal": C.has_calibration(title, abstract),
         "s": specs,
         "src": src,                      # t = title, a = abstract
+        "sys": level != "core",
         "x": C.derived(specs),
         "ct": "EA" if "early" in ctype.lower() else ("C" if "conf" in ctype.lower() else "J"),
         "url": a.get("html_url") or ("https://doi.org/" + a["doi"] if a.get("doi") else ""),

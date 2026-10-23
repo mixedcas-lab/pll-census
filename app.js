@@ -113,6 +113,7 @@
     p.prim = primaryArch(p);
   }
   var ANN_KEYS = ["f", "fref", "jitter", "p", "node", "fom", "spur", "fspur", "pn", "pn_off", "lock", "area"];
+  var ANN_HEAD = ["id", "exclude", "type", "arch", "app", "f", "fref", "jitter", "p", "node", "fom", "spur", "fspur", "pn", "pn_off", "lock", "area", "note", "by"];
   /* Where each number comes from. Priority when they disagree: checked > ai > abstract/title.
      t/a: parsed from the title/abstract by the collector; ai: an AI tool filled the annotations row (its "by" or
      "source" says so); checked: a person filled the row. */
@@ -142,6 +143,7 @@
         ANN_KEYS.forEach(function (k) {
           var raw = (a[k] || "").trim();
           if (!raw) return;                                         // empty: keep what is there
+          if (p.sys && who === "ai") return;                        // AI numbers of a system paper describe the system
           if (RANK[who] < RANK[p.vs[k] || "t"]) { p.conflicts.push(k); return; }
           if (DELETE.test(raw)) { delete p.s[k]; p.vs[k] = who; if (who === "checked") p.ver[k] = "deleted"; else delete p.ver[k]; return; }
           var v = parseSI(raw);
@@ -566,16 +568,30 @@
       nMiss++;
       [c.x, c.y].forEach(function (k) { if (p.f && p.f[k] == null) miss[k] = (miss[k] || 0) + 1; });
     });
+    var nSys = VIEW.filter(function (p) { return p.sys && !shown[p.id]; }).length;
     var why = Object.keys(miss).sort(function (a, b) { return miss[b] - miss[a]; })
       .map(function (k) { return miss[k] + " without " + AX[k].name.toLowerCase(); });
     var note = (pts.length ? pts.length + " of " + VIEW.length + " papers shown (filled: checked values; dashed rings: AI-extracted; rings: parsed from titles and abstracts)."
-      : "No paper in this selection reports both values.") + (nMiss ? " Not shown: " + (why.length ? why.join(", ") : nMiss + " below the selected value quality") + "." : "");
+      : "No paper in this selection reports both values.") + (nMiss ? " Not shown: " + (why.length ? why.join(", ") : nMiss + " below the selected value quality") + "." : "") +
+      (nSys ? " " + nSys + " of them are papers where the PLL is a block, whose numbers are not shown." : "");
     if (c === CHARTS.jp) note += " Dashed lines are constant FoM_J = 10 log[(σ/1 s)²·(P/1 mW)].";
     $("plot-note").innerHTML = esc(note) + (col.bar ? ' <span class="cbar"><span>' + esc(col.bar.name + " " + col.bar.lo) +
       '</span><span class="ramp"></span><span>' + esc(col.bar.hi) + "</span></span>" : "");
   }
 
   /* ------------------------------------------------------------ rendering: rows */
+  var SYS_DASH = '<span class="del" title="The PLL is a block of a larger system or only mentioned in the abstract; the numbers in the paper are not shown">—</span>';
+  var REPO = "https://github.com/mixedcas-lab/pll-census";
+  function fixURL(p) {   // a prefilled GitHub issue: the lab checks it and adds the row to data/annotations.csv
+    var vals = Object.keys(p.s).filter(function (k) { return ANN_KEYS.indexOf(k) >= 0; }).map(function (k) {
+      return k + " = " + p.s[k] + " (" + (SRC[p.vs[k] || "t"] || ["", "parsed"])[1].toLowerCase() + ")";
+    });
+    var body = ["Paper: " + p.t, "IEEE id: " + p.id + (p.url ? " (" + p.url + ")" : ""), "",
+      "Field(s) to correct (" + ANN_KEYS.join(", ") + "):", "Correct value with unit (or - if the paper does not report it):",
+      "Where in the paper (table, figure or page):", "", "Values shown now:"].concat(vals.length ? vals : ["(none)"]).concat(["",
+      "annotations.csv row to fill in:", "id," + ANN_HEAD.slice(1).join(","), p.id + "," + ANN_HEAD.slice(1).map(function () { return ""; }).join(",")]).join("\n");
+    return REPO + "/issues/new?title=" + encodeURIComponent("Correction: " + p.t.slice(0, 80)) + "&body=" + encodeURIComponent(body);
+  }
   function badge(p, k) {
     var src = p.vs[k] || "t", b = SRC[src];
     return '<sup class="src src-' + src + '" title="' + esc(b[1]) + '">' + b[0] + "</sup>";
@@ -588,6 +604,10 @@
   }
   function dB(v) { return v == null ? "" : v.toFixed(1) + " dB"; }
   function rowHTML(p) {
+    var html = rowCells(p);
+    return p.sys ? html.split('<span class="spec"></span>').join('<span class="spec">' + SYS_DASH + "</span>") : html;
+  }
+  function rowCells(p) {
     var au = p.au || [];
     var names = au.slice(0, 3).join(", ") + (au.length > 3 ? " et al." : "");
     var tags = (p.ty ? ['<span class="tag arch" style="background:' + TYPE_COLORS[p.ty] + '">' + esc(p.ty) + "</span>"] : [])
@@ -605,7 +625,8 @@
     return '<div class="tr" role="row" data-id="' + esc(p.id) + '">' +
       '<div class="pub" role="cell"><span class="venue">' + esc(p.v) + "</span><span>" + esc(fmtDate(p.d)) + "</span>" +
       (fresh ? '<span class="new">New</span>' : "") +
-      '<label class="cmp"><input type="checkbox" data-cmp="' + esc(p.id) + '"' + (F.cmp.indexOf(p.id) >= 0 ? " checked" : "") + "> Compare</label></div>" +
+      '<label class="cmp"><input type="checkbox" data-cmp="' + esc(p.id) + '"' + (F.cmp.indexOf(p.id) >= 0 ? " checked" : "") + "> Compare</label>" +
+      (/^m:/.test(p.id) ? "" : '<a class="fix" href="' + esc(fixURL(p)) + '" target="_blank" rel="noopener" title="Open a GitHub issue to correct a value">Report a fix</a>') + "</div>" +
       '<div class="paper" role="cell"><a class="title" href="' + esc(p.url || (p.doi ? "https://doi.org/" + p.doi : "#")) +
       '" target="_blank" rel="noopener">' + esc(p.t) + "</a>" +
       (names ? '<p class="by">' + esc(names) + "</p>" : "") +
