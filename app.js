@@ -575,7 +575,7 @@
       : "No paper in this selection reports both values.") + (nMiss ? " Not shown: " + (why.length ? why.join(", ") : nMiss + " below the selected value quality") + "." : "") +
       (nSys ? " " + nSys + " of them are papers where the PLL is a block, whose numbers are not shown." : "");
     if (c === CHARTS.jp) note += " Dashed lines are constant FoM_J = 10 log[(σ/1 s)²·(P/1 mW)].";
-    $("plot-note").innerHTML = esc(note) + (col.bar ? ' <span class="cbar"><span>' + esc(col.bar.name + " " + col.bar.lo) +
+    $("plot-note").innerHTML = (col.bar ? '<span class="cbar"><span>' + esc(col.bar.name + " " + col.bar.lo) +
       '</span><span class="ramp"></span><span>' + esc(col.bar.hi) + "</span></span>" : "");
   }
 
