@@ -245,6 +245,13 @@ def parse_specs(title, abstract):
     return out
 
 
+def spec_sources(title, abstract):
+    """parse_specs() plus where each value came from: {"key": "t" | "a"}."""
+    full = parse_specs(title, abstract)
+    only_title = parse_specs(title, "")
+    return full, {k: ("t" if only_title.get(k) == v else "a") for k, v in full.items()}
+
+
 def jitter_fom(jitter, power):
     """FoM_jitter = 10 log10((sigma_t / 1 s)^2 * (P / 1 mW)) in dB."""
     if not jitter or not power:

@@ -106,7 +106,7 @@ def build_record(a, venues):
     level = C.relevance(title, abstract)
     if not level:
         return None
-    specs = C.parse_specs(title, abstract)
+    specs, src = C.spec_sources(title, abstract)
     authors = sorted((a.get("authors") or {}).get("authors") or [], key=lambda x: x.get("author_order") or 0)
     names, orgs, countries = [], [], []
     for au in authors:
@@ -146,6 +146,7 @@ def build_record(a, venues):
         "ap": C.applications(title, abstract),
         "cal": C.has_calibration(title, abstract),
         "s": specs,
+        "src": src,                      # t = title, a = abstract
         "x": C.derived(specs),
         "ct": "EA" if "early" in ctype.lower() else ("C" if "conf" in ctype.lower() else "J"),
         "url": a.get("html_url") or ("https://doi.org/" + a["doi"] if a.get("doi") else ""),
