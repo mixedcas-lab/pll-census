@@ -47,6 +47,27 @@ class TestSpecs(unittest.TestCase):
         self.assertAlmostEqual(s["jitter"], 78e-15)
         self.assertEqual((s["fom"], s["spur"], s["fspur"], s["pn"], s["pn_off"]), (-250.1, -70.0, -58.0, -110.0, 1e6))
 
+    def test_more_spellings(self):
+        s = C.parse_specs("X", "achieves an rms jitter (integrated from 1 kHz to 100 MHz) of 69.5 fs for a 20 mW power")
+        self.assertEqual((round(s["jitter"] * 1e15, 2), s["p"]), (69.5, 0.02))
+        self.assertNotIn("f", s)                                   # not the integration bound
+        s = C.parse_specs("X", "measured integrated jitter of 69.09 and 73.26 fs. The power consumption is 20 mW, leading to "
+                               "a jitter-power figure of merit of −253.2 and −250.3 dB for integer-N")
+        self.assertEqual((round(s["jitter"] * 1e15, 2), s["fom"]), (69.09, -253.2))
+        self.assertEqual(C.parse_specs("X", "an excellent −254.3-dB jitter–power figure of merit (FoM)")["fom"], -254.3)
+        s = C.parse_specs("34.3 A 4.75GHz Digital PLL with 45.8fs Integrated-Jitter and 257dB FoM", "")
+        self.assertEqual((s["f"], round(s["jitter"] * 1e15, 1), s["fom"]), (4.75e9, 45.8, -257.0))
+        s = C.parse_specs("X", "a VCO FoM from -171.4 to -177.7 dBc/Hz. The output phase noise at 1-MHz offset is -123 dBc/Hz")
+        self.assertEqual((s.get("fom"), s["pn"], s["pn_off"]), (None, -123.0, 1e6))
+        s = C.parse_specs("X", "exhibiting a phase noise of 91.5 dBc/Hz at 1-MHz frequency offset")
+        self.assertEqual((s["pn"], s["pn_off"], s.get("f")), (-91.5, 1e6, None))
+        s = C.parse_specs("X", "phase noise of -136 dBc/Hz at a frequency offset of 20 MHz. This chip drains 24 mW, 0.53-mW/GHz.")
+        self.assertEqual((s["pn_off"], s["p"]), (20e6, 0.024))
+        self.assertEqual(C.parse_specs("A 45.5fs-Integrated-Random-Jitter and -75dBc-Integer-Boundary-Spur PLL", "")["fspur"], -75.0)
+        self.assertEqual(C.parse_specs("X", "A fractional spur of −67.4 dBc. The reference spur is -hbox72 dBc"),
+                         {"fspur": -67.4, "spur": -72.0})
+        self.assertNotIn("p", C.parse_specs("X", "an efficiency of 0.53 mW/GHz"))
+
     def test_range_takes_upper_end(self):
         self.assertEqual(C.parse_specs("A 0.7-V 26.2-28.5 GHz Dual-Loop Double-Sampling PLL", "")["f"], 28.5e9)
 

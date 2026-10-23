@@ -113,36 +113,56 @@ _SI = {"a": 1e-18, "f": 1e-15, "p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ
 # "2.4-GHz", "8-14GHz", "26.2-28.5 GHz", "0.27-THz": the upper end of a range is the output frequency
 FREQ_RX = re.compile(r"(?<![\w.])(?:" + NUM + r"\s*(?:-|–|to|-to-)\s*)?" + NUM + r"\s*-?\s*([kMGT])Hz\b")
 FREF_RX = re.compile(NUM + r"\s*-?\s*([kMG])Hz\s+(?:reference|ref\.?|crystal|XO|input)", I)
+_AND = r"(?:\s*(?:and|/|,)\s*[−–-]?\s?\d+(?:\.\d+)?)?"     # "69.09 and 73.26 fs": the first value
 JITTER_RX = [
-    re.compile(NUM + r"\s*-?\s*([fp])s\s*(?:,?\s*rms|RMS|-rms|_?rms)?\s*(?:integrated\s+|RMS\s+|rms\s+|absolute\s+)?jitter", I),
-    re.compile(r"jitter[^.;\d]{0,40}?(?:of\s+|is\s+|=\s*)?" + NUM + r"\s*-?\s*([fp])s", I),
+    re.compile(NUM + _AND + r"\s*-?\s*([fp])s\s*(?:,?\s*rms|RMS|-rms|_?rms)?[\s-]*(?:integrated[\s-]+|RMS[\s-]+|rms[\s-]+|absolute[\s-]+|random[\s-]+)*jitter", I),
+    re.compile(r"jitter\s*(?:\([^)]{0,60}\))?[^.;\d]{0,40}?(?:of\s+|is\s+|=\s*)?" + NUM + _AND + r"\s*-?\s*([fp])s", I),
     re.compile(NUM + r"\s*-?\s*([fp])s\s*-?\s*rms", I),
     re.compile(NUM + r"\s*-?\s*([fp])s(?:rms|RMS)\b", I),
 ]
-FOM_RX = [
-    re.compile(r"FoM\w*[^.;\d−–-]{0,40}?(?:of\s+)?" + r"([−–-]\s?2\d\d(?:\.\d+)?)\s*-?\s*dB", I),
-    re.compile(r"([−–-]\s?2\d\d(?:\.\d+)?)\s*-?\s*dB[- ]?(?:jitter[- ])?FoM", I),
+_FOM_WORDS = r"(?:FoM|figure[- ]of[- ]merit)"
+FOM_RX = [   # jitter FoM only: around -200..-290 dB (a VCO FoM is in dBc/Hz and positive)
+    re.compile(_FOM_WORDS + r"[\w,]*[^.;\d−–-]{0,40}?(?:of\s+)?([−–-]?\s?2\d\d(?:\.\d+)?)" + _AND + r"\s*-?\s*dB(?!c)", I),
+    re.compile(r"([−–-]?\s?2\d\d(?:\.\d+)?)\s*-?\s*dB(?!c)[- ]?(?:jitter[- –]?(?:power[- ])?)?" + _FOM_WORDS, I),
 ]
 SPUR_RX = [
     re.compile(r"(?:reference|ref\.?)[- ]spur\w*[^.;\d−–-]{0,30}?" + NEG + r"\s*-?\s*dBc", I),
-    re.compile(NEG + r"\s*-?\s*dBc\s+(?:reference|ref\.?)[- ]spur", I),
+    re.compile(NEG + r"\s*-?\s*dBc[\s-]+(?:reference|ref\.?)[- ]spur", I),
 ]
 FSPUR_RX = [
-    re.compile(r"(?:fractional|in-band fractional|worst(?:-case)? fractional)[- ]spurs?\w*[^.;\d−–-]{0,30}?" + NEG + r"\s*-?\s*dBc", I),
-    re.compile(NEG + r"\s*-?\s*dBc\s+(?:worst(?:-case)?\s+)?fractional[- ]spur", I),
+    re.compile(r"(?:fractional|integer[- ]boundary|worst(?:[- ]case)?)[- ](?:fractional[- ])?spurs?\w*[^.;\d−–-]{0,30}?" + NEG + r"\s*-?\s*dBc", I),
+    re.compile(NEG + r"\s*-?\s*dBc[\s-]+(?:in-band[\s-]+)?(?:worst(?:[- ]case)?[\s-]+)?(?:fractional|integer[- ]boundary)?[\s-]*spur", I),
 ]
-PN_RX = re.compile(NEG + r"\s*-?\s*dBc/Hz\s*(?:phase noise\s*)?(?:at|@)\s*(?:an?\s+)?(?:offset\s+(?:of\s+)?)?" + NUM + r"\s*-?\s*([kM])Hz", I)
+_OFFSET = r"(?:at|@)\s*(?:an?\s+)?(?:(?:frequency\s+)?offset(?:\s+frequency)?\s+(?:of\s+)?)?" + NUM + r"\s*-?\s*([kM])Hz"
+PN_RX = [   # (value, offset value, offset prefix) group order differs, see parse_specs
+    re.compile(r"([−–-]?\s?\d{2,3}(?:\.\d+)?)\s*-?\s*dBc/Hz\s*(?:phase noise\s*)?" + _OFFSET, I),
+    re.compile(r"phase[- ]noise\s*(?:\(PN\)\s*)?" + _OFFSET + r"(?:[- ](?:frequency[- ])?offset)?(?:\s+frequency)?\s*(?:is|of|=|from|was|at|:)?\s*"
+               r"([−–-]?\s?\d{2,3}(?:\.\d+)?)\s*-?\s*dBc/Hz", I),
+]
 LOCK_RX = re.compile(r"(?:lock(?:ing)?|settling)[- ]time[^.;\d]{0,25}?" + NUM + r"\s*-?\s*([nuµμm])s|" + NUM + r"\s*-?\s*([nuµμm])s\s+(?:lock(?:ing)?|settling)", I)
 NODE_NM_RX = re.compile(r"(?<![\w.])(\d{1,3})\s*-?\s*nm\b", I)
-NODE_UM_RX = re.compile(r"(?<![\w.])(0\.\d{2,3})\s*-?\s*[µμu]m\b", I)
-POWER_VAL = NUM + r"\s*-?\s*([nuµμm]?)W\b"
-POWER_CTX_RX = re.compile(r"(?:consum\w*|dissipat\w*|power(?:\s+consumption)?|draws|burns)[^.;]{0,40}?" + POWER_VAL, I)
+NODE_UM_RX = re.compile(r"(?<![\w.])(0\.\d{1,3})\s*-?\s*[µμu]m\b|(?<![\w.])([1-3](?:\.\d)?)\s*-?\s*[µμu]m\s+(?:\w+\s+){0,2}"
+                        r"(?:CMOS|BiCMOS|process|technology|SOI|bipolar|InP|SiGe|GaAs)", I)
+POWER_VAL = NUM + r"\s*-?\s*([nuµμm]?)W\b(?!\s*/)"     # not "mW/GHz"
+POWER_CTX_RX = re.compile(r"(?:consum\w*|dissipat\w*|power(?:\s+consumption)?|draw(?:s|ing)|drains?|burns?)[^.;]{0,40}?" + POWER_VAL, I)
 POWER_ANY_RX = re.compile(POWER_VAL)
+# value first: "9.4-mW power consumption", "with 5 mW of power"
+POWER_AFTER_RX = re.compile(POWER_VAL + r"\s*(?:of\s+)?(?:total\s+|overall\s+)?(?:power|consumption|dissipation)", I)
+# OCR leftovers in older records: "58. 5dB", "4. 15mW"; "0.18 mum", "870 muW"; "0.13 µ m"
+_FIXES = [(re.compile(r"(\d)\.\s(\d)"), r"\1.\2"), (re.compile(r"(\d)\s*-?\s*mu(m|W|A|V|s)\b"), r"\1 µ\2"),
+          (re.compile(r"([µμ])\s+m\b"), r"\1m"), (re.compile(r"\\?hbox\s*"), "")]
+
+
+def _norm(text):
+    for rx, rep in _FIXES:
+        text = rx.sub(rep, text)
+    return text
 AREA_RX = re.compile(NUM + r"\s*-?\s*mm\s*(?:2|²|\^2)", I)
 
 
-FREQ_SKIP_BEFORE = re.compile(r"(?:from|offset|integrat\w*|reference|ref\.?|bandwidth|\bBW|step|resolution|spacing|by)\s*(?:of\s+)?$", I)
-FREQ_SKIP_AFTER = re.compile(r"^\s*(?:offset|reference|ref\b|bandwidth|BW\b|loop|crystal|XO\b|input|step|resolution|to\s+\d|-to-)", I)
+FREQ_SKIP_BEFORE = re.compile(r"(?:(?:from|offset|integrat\w*|reference|ref\.?|bandwidth|\bBW|step|resolution|spacing|by)\s*(?:of\s+)?"
+                              r"|Hz\s*(?:to|-|–)\s*|dBc/Hz\s*(?:at|@)\s*(?:an?\s+)?)$", I)
+FREQ_SKIP_AFTER = re.compile(r"^\s*(?:(?:frequency\s+)?offset|reference|ref\b|bandwidth|BW\b|loop|crystal|XO\b|input|step|resolution|to\s+\d|-to-)", I)
 
 
 def output_frequency(title, abstract):
@@ -175,7 +195,7 @@ def _first(rxs, *texts):
 
 
 def parse_specs(title, abstract):
-    t, a = title or "", abstract or ""
+    t, a = _norm(title or ""), _norm(abstract or "")
     out = {}
     f = output_frequency(t, a)
     if f:
@@ -199,10 +219,12 @@ def parse_specs(title, abstract):
     m = _first(FSPUR_RX, t, a)
     if m:
         out["fspur"] = _neg(m.group(1))
-    m = PN_RX.search(t) or PN_RX.search(a)
-    if m:
-        out["pn"] = _neg(m.group(1))
-        out["pn_off"] = float(m.group(2)) * _SI[m.group(3)]
+    for rx, (iv, io, ip) in zip(PN_RX, ((1, 2, 3), (3, 1, 2))):
+        m = rx.search(t) or rx.search(a)
+        if m:
+            out["pn"] = _neg(m.group(iv))
+            out["pn_off"] = float(m.group(io)) * _SI[m.group(ip)]
+            break
     m = LOCK_RX.search(a) or LOCK_RX.search(t)
     if m:
         val, pre = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
@@ -213,8 +235,8 @@ def parse_specs(title, abstract):
     else:
         m = NODE_UM_RX.search(t) or NODE_UM_RX.search(a)
         if m:
-            out["node"] = int(round(float(m.group(1)) * 1000))
-    m = POWER_CTX_RX.search(a) or POWER_CTX_RX.search(t) or POWER_ANY_RX.search(t)
+            out["node"] = int(round(float(m.group(1) or m.group(2)) * 1000))
+    m = POWER_CTX_RX.search(a) or POWER_AFTER_RX.search(a) or POWER_CTX_RX.search(t) or POWER_ANY_RX.search(t)
     if m:
         out["p"] = float(m.group(1)) * _SI[m.group(2) or ""]
     m = AREA_RX.search(a) or AREA_RX.search(t)
