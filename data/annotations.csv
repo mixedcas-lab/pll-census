@@ -1,0 +1,4 @@
+id,exclude,type,arch,app,f,fref,jitter,p,node,fom,spur,fspur,pn,pn_off,lock,area,note,by
+# One row per paper. id = IEEE article number (last number in the Xplore URL). Leave a cell empty to keep the automatic value.
+# exclude=1 drops a false positive. type = Integer-N or Fractional-N. arch/app take several values separated by ";" (e.g. Digital/ADPLL;DTC-based).
+# Units: f, fref, pn_off in Hz; jitter and lock in s (85f = 85 fs); p in W; node in nm; fom in dB (negative); spur, fspur in dBc; pn in dBc/Hz; area in mm2. SI suffixes are fine: 5.6G, 100M, 85f, 9.4m.
