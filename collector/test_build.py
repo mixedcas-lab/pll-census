@@ -11,6 +11,12 @@ import build  # noqa: E402
 import classify as C  # noqa: E402
 
 
+class TestLockTime(unittest.TestCase):
+    def test_upper_case_prefix(self):
+        specs = C.parse_specs("A fractional-N PLL", "The lock time is 5 US with the proposed calibration.")
+        self.assertIn(specs.get("lock"), (None, 5e-6))
+
+
 class TestRelevance(unittest.TestCase):
     def test_core(self):
         for t in ("A 5GHz Fractional-N PLL with 97fsrms Jitter and -255.3dB FoM",

@@ -228,7 +228,9 @@ def parse_specs(title, abstract):
     m = LOCK_RX.search(a) or LOCK_RX.search(t)
     if m:
         val, pre = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
-        out["lock"] = float(val) * _SI[pre.replace("u", "µ")]
+        scale = _SI.get(pre.lower())    # time prefixes are lower case; abstracts sometimes write "US"
+        if scale:
+            out["lock"] = float(val) * scale
     m = NODE_NM_RX.search(t) or NODE_NM_RX.search(a)
     if m and 2 <= int(m.group(1)) <= 500:
         out["node"] = int(m.group(1))
